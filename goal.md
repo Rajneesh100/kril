@@ -20,6 +20,7 @@ so after each request is processed the ctx will be pushing this object struct in
 :
 
 {
+
   service_name = 'repo name' -- configured in the config.go
   process_type: api mostly  -- comes from the handler where api is defined at the top parent ctx can assign process_type based on is it api or cron or a consumer 
   endpoint :           -- from thre handler 
@@ -76,8 +77,8 @@ so let's make a service let's name it starfish this contains this grpc end point
 let's call this as a 'telemetry' module which hosts the grpc endpoint and dumps the data into the given elastic endpoint mentioned in config.go (a endpoint at which elastic is deployed and can be accessed from outside, here we will use docker hosted elastic)
 
 so now what needs to happen in once this grpc endpoints get a hit :
-so first of all we generate a unique id to and we save like key value : key: {service_name, id } -> data that ctx dumped
-i think for optimising the search and because every log which is commming is from a service so it makes sense to cluster all the logs data based on service, so basically the first part of the key decides the cluster and then id finds the exact value 
+so first of all we generate a unique id (request_id) to and we save like key value : key: {service_name, request_id } -> data that ctx dumped
+i think for optimising the search and because every log which is commming is from a service so it makes sense to cluster all the logs data based on service, so basically the first part of the key decides the cluster and then request_id finds the exact value 
 this db i will call it as service_logs and so this is our logs storage (needs to impliment auto archival and moving things into cold stoarge after 7 days on ec2 configuration)
 
 so this makes us solid in terms of stoarage of logs data which is very raw form but we can't use it to have monitoring and business analysis
@@ -88,6 +89,7 @@ let's call this telemetry_logs :
 which stores these details on each grpc endpoint hit after after saving service logs:
 
 {
+  request_id
   timestamp: now()
   request_id:     -- we genrated this in service_logs which points to the complete logs of this request
   service_name:
@@ -151,4 +153,25 @@ and   starfish-ui which will contains all the frontend code ui should be glass-u
 
 Milestone 3:
 
-refine ui and fix bugs 
+write 3-4 test services under a test_service folder name them a b c and their apis as api1 , api2 , .... they should be calling each other intracting etc, 
+
+genrate live data through hitting these services apis through curls which simulates real system and see if it is reflecting on the ui
+
+refine ui and fix bugs make it a engineer dream for debugging and presentation of observability as a lld dream 
+
+data should correct 100%
+
+Milestone 4:
+
+Make a another module on starfish named alerts which basically is pulse like system where user should be able to configure alerts based on threashold on absolute value or % value for error max rps , min rps  like pulse and it should get slack notification on a given channel (for now just write all the function and tomorrow i will provide the slack creadientials but keep the code ready)
+
+
+
+Milestone 5:
+
+now comes the automation layer the starfish buddy with 5 hands to help the developer:
+so based on alerts setting when ever something gets triggered user get's alert on the channel so just to solve the problem quickly 
+
+what ever threshold user has set at half of that (non zero) this agent get activates what agent will do is it will look for error log for that specific api or function in telemetry logs and with filter like process_failue true or method_failure true with service name and function name filters from here it can get the request_id, service from vectoria metrics's telemetry_logs and then go into the elastic and get the complete logs and these agent will have access to git repo deployed branch so now now llm can reason what broke and post a rca in the same channel with root cause and suggesting the solution.
+
+
