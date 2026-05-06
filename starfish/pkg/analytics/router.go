@@ -56,20 +56,29 @@ func (r *Router) listServices(w http.ResponseWriter, req *http.Request) {
 		},
 	}
 
-	// We use a raw search here to get aggregation results
-	logs, err := r.es.SearchTelemetryLogs(req.Context(), query)
+	raw, err := r.es.RawSearch(req.Context(), "telemetry_logs", query)
 	if err != nil {
 		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		return
 	}
-	// Extract unique service names from results
-	serviceSet := map[string]bool{}
-	for _, l := range logs {
-		serviceSet[l.ServiceName] = true
+
+	var esResp struct {
+		Aggregations struct {
+			Services struct {
+				Buckets []struct {
+					Key string `json:"key"`
+				} `json:"buckets"`
+			} `json:"services"`
+		} `json:"aggregations"`
 	}
-	services := make([]string, 0, len(serviceSet))
-	for s := range serviceSet {
-		services = append(services, s)
+	if err := json.Unmarshal(raw, &esResp); err != nil {
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		return
+	}
+
+	services := make([]string, 0, len(esResp.Aggregations.Services.Buckets))
+	for _, b := range esResp.Aggregations.Services.Buckets {
+		services = append(services, b.Key)
 	}
 	writeJSON(w, http.StatusOK, services)
 }

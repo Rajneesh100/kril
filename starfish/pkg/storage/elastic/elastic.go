@@ -202,6 +202,33 @@ func (c *Client) search(ctx context.Context, index string, query map[string]any,
 	return json.Unmarshal(arr, dest)
 }
 
+// RawSearch executes a raw ES query and returns the full response body.
+func (c *Client) RawSearch(ctx context.Context, index string, query map[string]any) (json.RawMessage, error) {
+	body, err := json.Marshal(query)
+	if err != nil {
+		return nil, err
+	}
+
+	url := fmt.Sprintf("%s/%s/_search", c.baseURL, index)
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(body))
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := c.http.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+	return json.RawMessage(respBody), nil
+}
+
 func serviceLogMapping() map[string]any {
 	return map[string]any{
 		"settings": map[string]any{
