@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import './App.css';
 import ServiceGraph from './components/ServiceGraph';
 import DetailPanel from './components/DetailPanel';
@@ -13,17 +13,18 @@ import {
 
 function App() {
   const [services, setServices] = useState<string[]>([]);
-  const [selectedService, setSelectedService] = useState('');
-  const [executionMap, setExecutionMap] = useState<ExecutionMapResponse | null>(null);
+  const [selectedServices, setSelectedServices] = useState<string[]>([]);
+  const [datasets, setDatasets] = useState<{ service: string; data: ExecutionMapResponse }[]>([]);
   const [telemetryLogs, setTelemetryLogs] = useState<TelemetryLog[]>([]);
   const [selectedFunction, setSelectedFunction] = useState<string | null>(null);
+  const [selectedService, setSelectedService] = useState<string | null>(null);
   const [selectedNodeStats, setSelectedNodeStats] = useState<NodeStats | null>(null);
   const [loading, setLoading] = useState(false);
   const [connected, setConnected] = useState(false);
   const [errorThreshold, setErrorThreshold] = useState(10);
-
-  // Time range: default to last 1 hour
   const [timeRange, setTimeRange] = useState('1h');
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const getTimeFrom = useCallback(() => {
     const now = new Date();
@@ -37,7 +38,7 @@ function App() {
     return new Date(now.getTime() - (durations[timeRange] || durations['1h'])).toISOString();
   }, [timeRange]);
 
-  // Check health + fetch services
+  // Fetch services
   useEffect(() => {
     const init = async () => {
       try {
@@ -53,10 +54,10 @@ function App() {
     return () => clearInterval(interval);
   }, []);
 
-  // Fetch data when service or time range changes
+  // Fetch data for all selected services
   useEffect(() => {
-    if (!selectedService) {
-      setExecutionMap(null);
+    if (selectedServices.length === 0) {
+      setDatasets([]);
       setTelemetryLogs([]);
       return;
     }
@@ -65,12 +66,18 @@ function App() {
       setLoading(true);
       try {
         const from = getTimeFrom();
-        const [map, logs] = await Promise.all([
-          fetchExecutionMap(selectedService, from),
-          fetchTelemetryLogs(selectedService, from),
-        ]);
-        setExecutionMap(map);
-        setTelemetryLogs(Array.isArray(logs) ? logs : []);
+        const results = await Promise.all(
+          selectedServices.map(async (svc) => {
+            const [map, logs] = await Promise.all([
+              fetchExecutionMap(svc, from),
+              fetchTelemetryLogs(svc, from),
+            ]);
+            return { service: svc, map, logs: Array.isArray(logs) ? logs : [] };
+          })
+        );
+
+        setDatasets(results.map(r => ({ service: r.service, data: r.map })));
+        setTelemetryLogs(results.flatMap(r => r.logs));
       } catch (err) {
         console.error('Failed to fetch data:', err);
       } finally {
@@ -79,25 +86,48 @@ function App() {
     };
 
     load();
-    const interval = setInterval(load, 10000); // Auto-refresh every 10s
+    const interval = setInterval(load, 10000);
     return () => clearInterval(interval);
-  }, [selectedService, timeRange, getTimeFrom]);
+  }, [selectedServices, timeRange, getTimeFrom]);
 
-  const handleNodeClick = useCallback((functionName: string) => {
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as HTMLElement)) {
+        setDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, []);
+
+  const toggleService = useCallback((svc: string) => {
+    setSelectedServices(prev =>
+      prev.includes(svc) ? prev.filter(s => s !== svc) : [...prev, svc]
+    );
+  }, []);
+
+  const selectAll = useCallback(() => {
+    setSelectedServices(services);
+  }, [services]);
+
+  const handleNodeClick = useCallback((functionName: string, serviceName: string) => {
     setSelectedFunction(functionName);
-    if (executionMap?.nodes) {
-      const node = executionMap.nodes.find(n => n.function === functionName);
+    setSelectedService(serviceName);
+    const ds = datasets.find(d => d.service === serviceName);
+    if (ds?.data?.nodes) {
+      const node = ds.data.nodes.find(n => n.function === functionName);
       setSelectedNodeStats(node || null);
     }
-  }, [executionMap]);
+  }, [datasets]);
 
   const handleClosePanel = useCallback(() => {
     setSelectedFunction(null);
+    setSelectedService(null);
     setSelectedNodeStats(null);
   }, []);
 
   const handleRequestClick = useCallback((requestId: string) => {
-    // TODO: open full request detail view
     console.log('View request:', requestId);
   }, []);
 
@@ -111,18 +141,46 @@ function App() {
         <div className="topbar-controls">
           <div className={`status-dot ${connected ? '' : 'error'}`} title={connected ? 'Connected' : 'Disconnected'} />
 
-          <select
-            value={selectedService}
-            onChange={(e) => {
-              setSelectedService(e.target.value);
-              handleClosePanel();
-            }}
-          >
-            <option value="">Select service...</option>
-            {services.map(s => (
-              <option key={s} value={s}>{s}</option>
-            ))}
-          </select>
+          {/* Multi-select dropdown */}
+          <div className="multi-select" ref={dropdownRef}>
+            <button
+              className="multi-select-trigger"
+              onClick={() => setDropdownOpen(!dropdownOpen)}
+            >
+              {selectedServices.length === 0
+                ? 'Select services...'
+                : selectedServices.length === services.length
+                ? `All services (${services.length})`
+                : selectedServices.join(', ')}
+              <span className="chevron">{dropdownOpen ? '\u25B2' : '\u25BC'}</span>
+            </button>
+            {dropdownOpen && (
+              <div className="multi-select-dropdown">
+                <button className="multi-select-all" onClick={selectAll}>
+                  Select all
+                </button>
+                {selectedServices.length > 0 && (
+                  <button className="multi-select-all" onClick={() => setSelectedServices([])}>
+                    Clear all
+                  </button>
+                )}
+                <div className="multi-select-divider" />
+                {services.map(svc => (
+                  <label key={svc} className="multi-select-option">
+                    <input
+                      type="checkbox"
+                      checked={selectedServices.includes(svc)}
+                      onChange={() => toggleService(svc)}
+                    />
+                    <span className="svc-name">{svc}</span>
+                  </label>
+                ))}
+                {services.length === 0 && (
+                  <div className="multi-select-empty">No services found</div>
+                )}
+              </div>
+            )}
+          </div>
 
           <select value={timeRange} onChange={(e) => setTimeRange(e.target.value)}>
             <option value="15m">Last 15m</option>
@@ -151,7 +209,7 @@ function App() {
       <div className="main-content">
         <div className="graph-canvas">
           <ServiceGraph
-            data={executionMap}
+            datasets={datasets}
             onNodeClick={handleNodeClick}
             errorThresholdPct={errorThreshold}
           />
@@ -159,6 +217,7 @@ function App() {
 
         <DetailPanel
           selectedFunction={selectedFunction}
+          selectedService={selectedService}
           nodeStats={selectedNodeStats}
           recentRequests={telemetryLogs}
           onClose={handleClosePanel}

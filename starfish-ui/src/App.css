@@ -408,6 +408,114 @@
   color: var(--text-muted);
 }
 
+/* Multi-select dropdown */
+.multi-select {
+  position: relative;
+}
+
+.multi-select-trigger {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-glass);
+  border-radius: 8px;
+  padding: 6px 12px;
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  cursor: pointer;
+  min-width: 180px;
+  max-width: 300px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: border-color 0.2s;
+}
+
+.multi-select-trigger:hover,
+.multi-select-trigger:focus {
+  border-color: var(--accent);
+  outline: none;
+}
+
+.multi-select-trigger .chevron {
+  margin-left: auto;
+  font-size: 9px;
+  color: var(--text-muted);
+}
+
+.multi-select-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  min-width: 200px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-glass-active);
+  border-radius: 10px;
+  padding: 6px;
+  z-index: 1000;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(12px);
+}
+
+.multi-select-all {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  color: var(--accent);
+  font-size: 12px;
+  font-family: var(--font-sans);
+  padding: 6px 10px;
+  cursor: pointer;
+  border-radius: 6px;
+}
+
+.multi-select-all:hover {
+  background: var(--bg-glass-hover);
+}
+
+.multi-select-divider {
+  height: 1px;
+  background: var(--border-glass);
+  margin: 4px 0;
+}
+
+.multi-select-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: background 0.15s;
+}
+
+.multi-select-option:hover {
+  background: var(--bg-glass-hover);
+}
+
+.multi-select-option input[type="checkbox"] {
+  accent-color: var(--accent);
+  width: 14px;
+  height: 14px;
+  cursor: pointer;
+}
+
+.multi-select-option .svc-name {
+  font-family: var(--font-mono);
+  color: var(--text-primary);
+}
+
+.multi-select-empty {
+  padding: 8px 10px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
 /* Loading spinner */
 @keyframes spin {
   to { transform: rotate(360deg); }

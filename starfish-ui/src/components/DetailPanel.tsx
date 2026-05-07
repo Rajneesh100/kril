@@ -3,6 +3,7 @@ import { NodeStats, TelemetryLog } from '../api';
 
 interface DetailPanelProps {
   selectedFunction: string | null;
+  selectedService: string | null;
   nodeStats: NodeStats | null;
   recentRequests: TelemetryLog[];
   onClose: () => void;
@@ -11,6 +12,7 @@ interface DetailPanelProps {
 
 const DetailPanel: React.FC<DetailPanelProps> = ({
   selectedFunction,
+  selectedService,
   nodeStats,
   recentRequests,
   onClose,
@@ -35,15 +37,19 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
     ? ((nodeStats.error_count / nodeStats.total_calls) * 100).toFixed(1)
     : '0.0';
 
-  // Filter requests that involve this function
+  // Filter requests that involve this function in this service
   const relevant = recentRequests.filter(r =>
+    (!selectedService || r.service_name === selectedService) &&
     r.execution_map?.some(em => em.current_function === selectedFunction)
   );
 
   return (
     <div className="side-panel">
       <div className="panel-header">
-        <h2 style={{ fontFamily: 'var(--font-mono)', fontSize: 13 }}>{selectedFunction}</h2>
+        <h2 style={{ fontFamily: 'var(--font-mono)', fontSize: 13 }}>
+          {selectedService && <span style={{ color: 'var(--text-muted)', marginRight: 6 }}>{selectedService}::</span>}
+          {selectedFunction}
+        </h2>
         <button className="panel-close" onClick={onClose}>&times;</button>
       </div>
       <div className="panel-body">
