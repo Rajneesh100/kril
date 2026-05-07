@@ -213,6 +213,14 @@ function App() {
             onNodeClick={handleNodeClick}
             errorThresholdPct={errorThreshold}
           />
+          {/* Grafana-style legend */}
+          <div className="graph-legend">
+            <span className="legend-item"><span className="legend-dot" style={{ background: '#73BF69' }} /> Success</span>
+            <span className="legend-item"><span className="legend-dot" style={{ background: '#F2495C' }} /> Errors</span>
+            <span className="legend-item"><span className="legend-line" /> Internal call</span>
+            <span className="legend-item"><span className="legend-line dashed orange" /> Cross-service</span>
+            <span className="legend-item"><span className="legend-line dashed" /> Database</span>
+          </div>
         </div>
 
         <DetailPanel

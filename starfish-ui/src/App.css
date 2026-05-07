@@ -95,6 +95,54 @@
   background: var(--g-bg-canvas);
 }
 
+/* --- Grafana-style legend bar --- */
+.graph-legend {
+  position: absolute;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 6px 14px;
+  background: var(--g-bg-primary);
+  border: 1px solid var(--g-border);
+  border-radius: 4px;
+  z-index: 10;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: var(--g-text-secondary);
+  font-family: var(--font-sans);
+  white-space: nowrap;
+}
+
+.legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.legend-line {
+  width: 18px;
+  height: 0;
+  border-top: 2px solid var(--g-text-disabled);
+  flex-shrink: 0;
+}
+
+.legend-line.dashed {
+  border-top-style: dashed;
+}
+
+.legend-line.orange {
+  border-top-color: #FF9830;
+}
+
 /* --- React Flow overrides (Grafana style) --- */
 .react-flow__background {
   background: var(--g-bg-canvas) !important;
