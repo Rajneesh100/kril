@@ -22,12 +22,13 @@ interface ServiceGraphProps {
   errorThresholdPct: number;
 }
 
+// Grafana data visualization palette
 const SERVICE_COLORS = [
-  { border: 'rgba(129, 140, 248, 0.3)', bg: 'rgba(129, 140, 248, 0.02)', label: '#818cf8', edge: 'rgba(129, 140, 248, 0.25)' },
-  { border: 'rgba(110, 231, 183, 0.3)', bg: 'rgba(110, 231, 183, 0.02)', label: '#6ee7b7', edge: 'rgba(110, 231, 183, 0.25)' },
-  { border: 'rgba(253, 186, 116, 0.3)', bg: 'rgba(253, 186, 116, 0.02)', label: '#fdba74', edge: 'rgba(253, 186, 116, 0.25)' },
-  { border: 'rgba(249, 168, 212, 0.3)', bg: 'rgba(249, 168, 212, 0.02)', label: '#f9a8d4', edge: 'rgba(249, 168, 212, 0.25)' },
-  { border: 'rgba(125, 211, 252, 0.3)', bg: 'rgba(125, 211, 252, 0.02)', label: '#7dd3fc', edge: 'rgba(125, 211, 252, 0.25)' },
+  { border: 'rgba(110, 159, 255, 0.25)', bg: 'rgba(61, 113, 217, 0.03)', label: '#6e9fff', edge: 'rgba(110, 159, 255, 0.22)' },
+  { border: 'rgba(108, 207, 142, 0.25)', bg: 'rgba(26, 127, 75, 0.03)', label: '#6ccf8e', edge: 'rgba(108, 207, 142, 0.22)' },
+  { border: 'rgba(251, 173, 55, 0.25)', bg: 'rgba(255, 153, 0, 0.03)', label: '#fbad37', edge: 'rgba(251, 173, 55, 0.22)' },
+  { border: 'rgba(194, 122, 255, 0.25)', bg: 'rgba(194, 122, 255, 0.03)', label: '#C27AFF', edge: 'rgba(194, 122, 255, 0.22)' },
+  { border: 'rgba(255, 82, 134, 0.25)', bg: 'rgba(209, 14, 92, 0.03)', label: '#ff5286', edge: 'rgba(255, 82, 134, 0.22)' },
 ];
 
 /**
@@ -151,7 +152,7 @@ function layoutGraph(
     serviceCenters[service] = { x: centerX, y: centerY, radius: bubbleRadius };
     serviceEntryNodes[service] = entryFunctions.map(f => `${service}::${f}`);
 
-    // Circular bubble
+    // Circular bubble (Grafana-style: subtle, no heavy borders)
     rfNodes.push({
       id: `bubble-${service}`,
       type: 'group',
@@ -161,7 +162,7 @@ function layoutGraph(
         height: bubbleRadius * 2,
         borderRadius: '50%',
         background: color.bg,
-        border: `1.5px solid ${color.border}`,
+        border: `1px solid ${color.border}`,
         zIndex: -1,
         pointerEvents: 'none' as const,
       },
@@ -170,21 +171,21 @@ function layoutGraph(
       draggable: false,
     });
 
-    // Service label
+    // Service label (Grafana-style: small, muted)
     rfNodes.push({
       id: `label-${service}`,
       type: 'default',
-      position: { x: centerX - 55, y: centerY - bubbleRadius - 32 },
+      position: { x: centerX - 50, y: centerY - bubbleRadius - 28 },
       style: {
         background: 'transparent',
         border: 'none',
         color: color.label,
-        fontSize: '12px',
-        fontWeight: 700,
+        fontSize: '11px',
+        fontWeight: 600,
         fontFamily: "'JetBrains Mono', monospace",
-        letterSpacing: '0.08em',
+        letterSpacing: '0.06em',
         textTransform: 'uppercase' as const,
-        width: 110,
+        width: 100,
         textAlign: 'center' as const,
         pointerEvents: 'none' as const,
       },
@@ -288,17 +289,18 @@ function layoutGraph(
       type: 'default',
       position: { x: dbX - 22, y: dbY - 16 },
       style: {
-        width: 44,
-        height: 32,
-        borderRadius: '4px 4px 10px 10px',
-        background: 'rgba(99, 102, 241, 0.08)',
-        border: '1.5px solid rgba(99, 102, 241, 0.25)',
+        width: 40,
+        height: 28,
+        borderRadius: '3px 3px 8px 8px',
+        background: '#22252b',
+        border: '1px solid #383b42',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        fontSize: '10px',
+        fontSize: '9px',
+        fontWeight: 600,
         fontFamily: "'JetBrains Mono', monospace",
-        color: 'rgba(255,255,255,0.5)',
+        color: '#6e9fff',
         padding: 0,
       },
       data: { label: 'DB' },
@@ -316,7 +318,7 @@ function layoutGraph(
         animated: false,
         style: {
           strokeWidth: 1,
-          stroke: 'rgba(99, 102, 241, 0.15)',
+          stroke: 'rgba(110, 159, 255, 0.12)',
           strokeDasharray: '6 3',
         },
       });
@@ -368,7 +370,7 @@ function layoutGraph(
       },
       style: {
         width: 6, height: 6, borderRadius: '50%',
-        background: 'rgba(250, 204, 21, 0.5)',
+        background: 'rgba(251, 173, 55, 0.5)',
         border: 'none', padding: 0,
       },
       data: { label: '' },
@@ -386,7 +388,7 @@ function layoutGraph(
       },
       style: {
         width: 6, height: 6, borderRadius: '50%',
-        background: 'rgba(250, 204, 21, 0.5)',
+        background: 'rgba(251, 173, 55, 0.5)',
         border: 'none', padding: 0,
       },
       data: { label: '' },
@@ -400,7 +402,7 @@ function layoutGraph(
       source: call.sourceId,
       target: srcAnchorId,
       type: 'default',
-      style: { strokeWidth: 1.5, stroke: 'rgba(250, 204, 21, 0.2)', strokeDasharray: '4 3' },
+      style: { strokeWidth: 1.5, stroke: 'rgba(251, 173, 55, 0.18)', strokeDasharray: '4 3' },
     });
 
     // Edge: source anchor -> target anchor (the inter-service hop)
@@ -410,15 +412,15 @@ function layoutGraph(
       target: tgtAnchorId,
       type: 'straight',
       animated: true,
-      style: { strokeWidth: 2, stroke: 'rgba(250, 204, 21, 0.3)' },
+      style: { strokeWidth: 2, stroke: 'rgba(255, 153, 0, 0.3)' },
       markerEnd: {
         type: MarkerType.ArrowClosed,
-        color: 'rgba(250, 204, 21, 0.5)',
+        color: 'rgba(255, 153, 0, 0.5)',
         width: 10,
         height: 10,
       },
       label: pathMatch ? pathMatch[0] : '',
-      labelStyle: { fill: 'rgba(250, 204, 21, 0.6)', fontSize: 9, fontFamily: "'JetBrains Mono', monospace" },
+      labelStyle: { fill: 'rgba(251, 173, 55, 0.6)', fontSize: 9, fontFamily: "'JetBrains Mono', monospace" },
       labelBgStyle: { fill: 'rgba(10, 10, 15, 0.85)', rx: 3 },
       labelBgPadding: [4, 2] as [number, number],
     });
@@ -429,7 +431,7 @@ function layoutGraph(
       source: tgtAnchorId,
       target: targetNodeId,
       type: 'default',
-      style: { strokeWidth: 1.5, stroke: 'rgba(250, 204, 21, 0.2)', strokeDasharray: '4 3' },
+      style: { strokeWidth: 1.5, stroke: 'rgba(251, 173, 55, 0.18)', strokeDasharray: '4 3' },
     });
   }
 
@@ -510,7 +512,7 @@ const ServiceGraph: React.FC<ServiceGraphProps> = ({ datasets, onNodeClick, erro
       connectionLineType={ConnectionLineType.SmoothStep}
       proOptions={{ hideAttribution: true }}
     >
-      <Background color="rgba(255,255,255,0.015)" gap={32} />
+      <Background color="rgba(255,255,255,0.02)" gap={24} size={1} />
       <Controls showInteractive={false} />
       <MiniMap
         nodeColor={(n) => {
@@ -521,8 +523,8 @@ const ServiceGraph: React.FC<ServiceGraphProps> = ({ datasets, onNodeClick, erro
           if (d?.serviceColor) return d.serviceColor;
           return '#52525b';
         }}
-        maskColor="rgba(0,0,0,0.8)"
-        style={{ background: 'rgba(15,15,25,0.9)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 8 }}
+        maskColor="rgba(0,0,0,0.75)"
+        style={{ background: '#181b1f', border: '1px solid #2c2f35', borderRadius: 4 }}
       />
     </ReactFlow>
   );

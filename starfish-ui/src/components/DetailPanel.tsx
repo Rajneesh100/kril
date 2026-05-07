@@ -46,8 +46,8 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
   return (
     <div className="side-panel">
       <div className="panel-header">
-        <h2 style={{ fontFamily: 'var(--font-mono)', fontSize: 13 }}>
-          {selectedService && <span style={{ color: 'var(--text-muted)', marginRight: 6 }}>{selectedService}::</span>}
+        <h2 style={{ fontFamily: "var(--font-mono, 'JetBrains Mono', monospace)", fontSize: 12 }}>
+          {selectedService && <span style={{ color: '#585e67', marginRight: 4 }}>{selectedService}/</span>}
           {selectedFunction}
         </h2>
         <button className="panel-close" onClick={onClose}>&times;</button>
