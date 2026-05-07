@@ -2,21 +2,25 @@ package analytics
 
 import (
 	"encoding/json"
+	"io"
 	"net/http"
 	"time"
 
 	"github.com/rajneesh/starfish/pkg/storage/elastic"
+	"github.com/rajneesh/starfish/pkg/storage/victoria"
 )
 
 type Router struct {
 	mux *http.ServeMux
 	es  *elastic.Client
+	vm  *victoria.Client
 }
 
-func NewRouter(es *elastic.Client) *Router {
+func NewRouter(es *elastic.Client, vm *victoria.Client) *Router {
 	r := &Router{
 		mux: http.NewServeMux(),
 		es:  es,
+		vm:  vm,
 	}
 	r.mux.HandleFunc("GET /api/health", r.health)
 	r.mux.HandleFunc("GET /api/services", r.listServices)
@@ -24,6 +28,8 @@ func NewRouter(es *elastic.Client) *Router {
 	r.mux.HandleFunc("GET /api/telemetry-logs", r.queryTelemetryLogs)
 	r.mux.HandleFunc("GET /api/telemetry-logs/{requestID}", r.getTelemetryLog)
 	r.mux.HandleFunc("GET /api/execution-map", r.getExecutionMap)
+	r.mux.HandleFunc("GET /api/metrics/query", r.metricsQuery)
+	r.mux.HandleFunc("GET /api/metrics/query_range", r.metricsQueryRange)
 	return r
 }
 
@@ -281,8 +287,61 @@ func (r *Router) getExecutionMap(w http.ResponseWriter, req *http.Request) {
 	})
 }
 
+// metricsQuery proxies PromQL instant queries to VictoriaMetrics.
+// GET /api/metrics/query?query=<promql>
+func (r *Router) metricsQuery(w http.ResponseWriter, req *http.Request) {
+	if r.vm == nil {
+		writeJSON(w, http.StatusServiceUnavailable, map[string]string{"error": "VictoriaMetrics not configured"})
+		return
+	}
+	query := req.URL.Query().Get("query")
+	if query == "" {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "query parameter is required"})
+		return
+	}
+	data, err := r.vm.QueryInstant(req.Context(), query)
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Write(data)
+}
+
+// metricsQueryRange proxies PromQL range queries to VictoriaMetrics.
+// GET /api/metrics/query_range?query=<promql>&start=<ts>&end=<ts>&step=<duration>
+func (r *Router) metricsQueryRange(w http.ResponseWriter, req *http.Request) {
+	if r.vm == nil {
+		writeJSON(w, http.StatusServiceUnavailable, map[string]string{"error": "VictoriaMetrics not configured"})
+		return
+	}
+	query := req.URL.Query().Get("query")
+	start := req.URL.Query().Get("start")
+	end := req.URL.Query().Get("end")
+	step := req.URL.Query().Get("step")
+	if query == "" || start == "" || end == "" {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "query, start, end are required"})
+		return
+	}
+	if step == "" {
+		step = "60s"
+	}
+	data, err := r.vm.QueryRange(req.Context(), query, start, end, step)
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Write(data)
+}
+
 func writeJSON(w http.ResponseWriter, status int, data any) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 	json.NewEncoder(w).Encode(data)
 }
+
+// suppress unused import
+var _ = io.EOF

@@ -8,6 +8,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/rajneesh/starfish/pkg/storage"
 	"github.com/rajneesh/starfish/pkg/storage/elastic"
+	"github.com/rajneesh/starfish/pkg/storage/victoria"
 	pb "github.com/rajneesh/starfish/pkg/telemetry/pb"
 	"google.golang.org/grpc"
 )
@@ -15,10 +16,11 @@ import (
 type Service struct {
 	pb.UnimplementedTelemetryServiceServer
 	es *elastic.Client
+	vm *victoria.Client
 }
 
-func NewService(es *elastic.Client) *Service {
-	return &Service{es: es}
+func NewService(es *elastic.Client, vm *victoria.Client) *Service {
+	return &Service{es: es, vm: vm}
 }
 
 func (s *Service) Register(srv *grpc.Server) {
@@ -98,7 +100,7 @@ func (s *Service) PushMetric(ctx context.Context, req *pb.PushMetricRequest) (*p
 		telemetryLog.ExecutionMap = append(telemetryLog.ExecutionMap, entry)
 	}
 
-	// Fire and forget: store both asynchronously
+	// Fire and forget: store to ES + push metrics to VictoriaMetrics
 	go func() {
 		bgCtx := context.Background()
 		if err := s.es.StoreServiceLog(bgCtx, serviceLog); err != nil {
@@ -106,6 +108,11 @@ func (s *Service) PushMetric(ctx context.Context, req *pb.PushMetricRequest) (*p
 		}
 		if err := s.es.StoreTelemetryLog(bgCtx, telemetryLog); err != nil {
 			log.Printf("ERROR storing telemetry_log %s: %v", requestID, err)
+		}
+		if s.vm != nil {
+			if err := s.vm.PushMetrics(bgCtx, telemetryLog); err != nil {
+				log.Printf("ERROR pushing metrics to VM %s: %v", requestID, err)
+			}
 		}
 	}()
 

@@ -13,6 +13,7 @@ import (
 	"github.com/rajneesh/starfish/pkg/analytics"
 	"github.com/rajneesh/starfish/pkg/config"
 	"github.com/rajneesh/starfish/pkg/storage/elastic"
+	"github.com/rajneesh/starfish/pkg/storage/victoria"
 	"github.com/rajneesh/starfish/pkg/telemetry"
 	"google.golang.org/grpc"
 )
@@ -37,6 +38,14 @@ func main() {
 		log.Printf("WARN: could not ensure ES indices (will retry on write): %v", err)
 	}
 
+	// Init VictoriaMetrics (time-series metrics for analytics)
+	vmClient, err := victoria.New(cfg.VictoriaURL)
+	if err != nil {
+		log.Printf("WARN: could not create VM client: %v", err)
+	} else {
+		log.Printf("VictoriaMetrics client connected to %s", cfg.VictoriaURL)
+	}
+
 	// Start gRPC server
 	grpcLis, err := net.Listen("tcp", fmt.Sprintf(":%d", cfg.GRPCPort))
 	if err != nil {
@@ -44,7 +53,7 @@ func main() {
 	}
 
 	grpcServer := grpc.NewServer()
-	telemetrySvc := telemetry.NewService(esClient)
+	telemetrySvc := telemetry.NewService(esClient, vmClient)
 	telemetrySvc.Register(grpcServer)
 
 	go func() {
@@ -55,7 +64,7 @@ func main() {
 	}()
 
 	// Start HTTP server (analytics APIs)
-	router := analytics.NewRouter(esClient)
+	router := analytics.NewRouter(esClient, vmClient)
 	httpServer := &http.Server{
 		Addr:    fmt.Sprintf(":%d", cfg.HTTPPort),
 		Handler: router,
