@@ -16,17 +16,17 @@ import (
 	"os"
 	"time"
 
-	sctx "github.com/rajneesh/starfish/pkg/ctx"
+	sctx "github.com/Rajneesh100/kril/backend/pkg/ctx"
 )
 
 var serviceAURL string
 
 func main() {
-	starfishAddr := envOr("STARFISH_GRPC_ADDR", "localhost:50051")
+	krilAddr := envOr("KRIL_GRPC_ADDR", "localhost:50051")
 	serviceAURL = envOr("SERVICE_A_URL", "http://localhost:8081")
 	port := envOr("PORT", "8083")
 
-	sctx.Configure("service_c", starfishAddr)
+	sctx.Configure("service_c", krilAddr)
 
 	http.HandleFunc("/api1", handleAPI1)
 	http.HandleFunc("/api2", handleAPI2)

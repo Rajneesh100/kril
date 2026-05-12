@@ -174,4 +174,4 @@ so based on alerts setting when ever something gets triggered user get's alert o
 
 what ever threshold user has set at half of that (non zero) this agent get activates what agent will do is it will look for error log for that specific api or function in telemetry logs and with filter like process_failue true or method_failure true with service name and function name filters from here it can get the request_id, service from vectoria metrics's telemetry_logs and then go into the elastic and get the complete logs and these agent will have access to git repo deployed branch so now now llm can reason what broke and post a rca in the same channel with root cause and suggesting the solution.
 
-
+keep itrating and refine logic, improve ui make it production ready and should not have any security velnerbility since we are using ctx

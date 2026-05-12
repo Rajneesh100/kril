@@ -6,7 +6,7 @@ ITERATIONS=${1:-100}
 DELAY_MS=${2:-200}
 SERVICE_A="http://localhost:8081"
 
-echo "=== Starfish Load Generator ==="
+echo "=== kril Load Generator ==="
 echo "Hitting service_a endpoints for $ITERATIONS iterations (${DELAY_MS}ms delay)"
 echo ""
 

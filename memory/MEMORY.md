@@ -1,0 +1,3 @@
+- [User role](user_role.md) — rajneesh@daitalabs.com, founder/engineer launching open-source dev tools; current focus is kril
+- [kril project](project_kril.md) — open-source rebrand of "starfish" observability system; Go ctx tracing + gRPC + Elastic/VictoriaMetrics + glass UI + AI RCA
+- [Graph viz approach](feedback_graph_viz.md) — kril UI uses hybrid d3-force-per-service layout; user validated over alternatives

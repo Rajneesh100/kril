@@ -24,10 +24,75 @@ services:
       - "--storageDataPath=/storage"
       - "--httpListenAddr=:8428"
       - "--retentionPeriod=30d"
-    healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:8428/health || exit 1"]
-      interval: 10s
-      retries: 5
+
+  kril-backend:
+    build: ./backend
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+      victoriametrics:
+        condition: service_started
+    environment:
+      - KRIL_GRPC_PORT=50051
+      - KRIL_HTTP_PORT=8080
+      - KRIL_ELASTIC_URL=http://elasticsearch:9200
+      - KRIL_VICTORIA_URL=http://victoriametrics:8428
+    ports:
+      - "50051:50051"
+      - "8080:8080"
+
+  kril-ui:
+    build: ./ui
+    depends_on:
+      - kril-backend
+    ports:
+      - "3000:80"
+
+  service_a:
+    build:
+      context: .
+      dockerfile: test_services/Dockerfile
+      args:
+        SERVICE: service_a
+    depends_on:
+      - kril-backend
+    environment:
+      - PORT=8081
+      - KRIL_GRPC_ADDR=kril-backend:50051
+      - SERVICE_B_URL=http://service_b:8082
+      - SERVICE_C_URL=http://service_c:8083
+    ports:
+      - "8081:8081"
+
+  service_b:
+    build:
+      context: .
+      dockerfile: test_services/Dockerfile
+      args:
+        SERVICE: service_b
+    depends_on:
+      - kril-backend
+    environment:
+      - PORT=8082
+      - KRIL_GRPC_ADDR=kril-backend:50051
+      - SERVICE_C_URL=http://service_c:8083
+    ports:
+      - "8082:8082"
+
+  service_c:
+    build:
+      context: .
+      dockerfile: test_services/Dockerfile
+      args:
+        SERVICE: service_c
+    depends_on:
+      - kril-backend
+    environment:
+      - PORT=8083
+      - KRIL_GRPC_ADDR=kril-backend:50051
+      - SERVICE_A_URL=http://service_a:8081
+    ports:
+      - "8083:8083"
 
 volumes:
   es_data:
