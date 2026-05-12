@@ -135,8 +135,8 @@ function App() {
     <div className="app">
       <div className="topbar">
         <div className="topbar-brand">
-          <span className="logo">&#x2B50;</span>
-          <h1>starfish</h1>
+          <span className="logo">🦞</span>
+          <h1>Kril</h1>
         </div>
         <div className="topbar-controls">
           <div className={`status-dot ${connected ? '' : 'error'}`} title={connected ? 'Connected' : 'Disconnected'} />
