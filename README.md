@@ -27,7 +27,6 @@ docker compose up -d
 open http://localhost:3000
 ```
 
-That's the full setup. No Go install, no Node install, no manual config.
 
 ### What just started
 
