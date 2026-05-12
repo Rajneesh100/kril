@@ -1,3 +1,6 @@
+
+
+
 # kril
 
 **Open-source Go observability with a built-in AI debugger.**
@@ -5,6 +8,8 @@
 Drop-in context wrapper for Go services. Every request traces itself — function tree, latency, inputs, outputs, errors — and streams to a self-hosted backend over gRPC. Visualize live service graphs, get Slack alerts on thresholds, and let kril's RCA agent post root-cause hypotheses the moment something breaks.
 
 No SDK sprawl. No vendor lock-in. Apache 2.0.
+
+<img width="1051" height="426" alt="Screenshot 2026-05-13 at 2 18 56 AM" src="https://github.com/user-attachments/assets/44f481de-5b63-4177-b031-ebfc15cdcbfb" />
 
 ---
 
